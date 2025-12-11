@@ -23,9 +23,9 @@ exports.getUser = async (req,res) =>{
     res.status(201).json({message: 'List of Users' , data: user})
 }
 
-exports.getUsersById = async (req, res) => {
+exports.getUserById = async (req, res) => {
     try {
-      const id = req.user.id;
+      const id = req.params.id;     // Edited
       const user = await Reg.findById(id);
   
       if (!user) {
@@ -43,3 +43,18 @@ exports.getUsersById = async (req, res) => {
       });
     }
   };
+
+  exports.deleteUserById = catchAsync(async (req, res, next) => {
+    const id = req.params.id;
+
+    const user = await Reg.findByIdAndDelete(id);
+
+    if (!user) {
+        return next(new AppError("User not found", 404));
+    }
+
+    res.status(200).json({
+        message: "User deleted successfully.",
+        deletedUser: user
+    });
+});

@@ -11,6 +11,8 @@ app.use(express.json());
 
 connectDB();
 
+app.use('/registration' , require('./routes/Reg.route'))
+
 
 const PORT = process.env.PORT || 3000 ;
 app.listen(PORT , () => console.log(`🚀 Server Started at port ${PORT}`));
