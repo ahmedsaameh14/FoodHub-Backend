@@ -6,6 +6,9 @@ const connectDB = require('./config/db.config');
 const path = require('path');
 const app = express();
 
+const corsMiddleware = require('./middlewares/cors.middleware');
+app.use(corsMiddleware);
+
 app.use(express.json());
 app.use('/uploads' , express.static(path.join(__dirname , './uploads')))
 
