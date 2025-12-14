@@ -7,6 +7,7 @@ const path = require('path');
 const app = express();
 
 app.use(express.json());
+app.use('/uploads' , express.static(path.join(__dirname , './uploads')))
 
 
 connectDB();
