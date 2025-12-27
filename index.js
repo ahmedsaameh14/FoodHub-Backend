@@ -18,6 +18,7 @@ connectDB();
 app.use('/registration' , require('./routes/Reg.route'))
 app.use('/login' , require('./routes/Login.route'))
 app.use('/category' , require('./routes/Category.route'))
+app.use('/restaurant' , require('./routes/Restaurant.route'))
 
 
 const PORT = process.env.PORT || 3000 ;
