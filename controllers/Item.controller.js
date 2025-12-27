@@ -5,8 +5,7 @@ const Restaurant = require('../models/Restaurant.model');
 // Add Item To Restaurant
 exports.addItemToRestaurant = async (req, res) => {
   try {
-    const { restaurantId } = req.params;
-    const { name, desc, price } = req.body;
+    const { name, desc, price , restaurantId } = req.body;
     const img = req.file.filename;
 
     const restaurant = await Restaurant.findById(restaurantId);
@@ -56,8 +55,6 @@ exports.getItemsByRestaurant = async (req, res) => {
 };
 
 // Get Item by ID
-const Item = require('../models/Item.model');
-
 exports.getItemById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -82,8 +79,6 @@ exports.getItemById = async (req, res) => {
 };
 
 // Update Item
-const Item = require('../models/Item.model');
-
 exports.updateItem = async (req, res) => {
   try {
     const { id } = req.params;
