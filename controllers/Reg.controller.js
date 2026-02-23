@@ -58,3 +58,43 @@ exports.getUserById = async (req, res) => {
         deletedUser: user
     });
 });
+
+// Favourite Section 
+
+exports.toggleFavouriteItem = catchAsync(async (req, res, next) => {
+  const userId = req.user.id; // from authenticate middleware
+  const itemId = req.params.itemId; // item id
+
+  const user = await Reg.findById(userId);
+
+  if (!user) {
+    return next(new AppError("User not found", 404));
+  }
+
+  const isExist = user.favourites.includes(itemId);
+
+  if (isExist) {
+    user.favourites.pull(itemId); // remove
+  } else {
+    user.favourites.push(itemId); // add
+  }
+
+  await user.save();
+
+  res.status(200).json({
+    message: isExist
+      ? "Item removed from favourites"
+      : "Item added to favourites",
+    favourites: user.favourites,
+  });
+});
+
+exports.getMyFavouriteItems = catchAsync(async (req, res, next) => {
+  const userId = req.user.id;
+
+  const user = await Reg.findById(userId).populate("favourites"); // 👈 now it returns full item data
+
+  res.status(200).json({
+    favourites: user.favourites,
+  });
+});

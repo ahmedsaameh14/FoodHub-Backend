@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const {createUser , getUser , getUserById , deleteUserById} = require('../controllers/Reg.controller');
+const {createUser , getUser , getUserById , deleteUserById , toggleFavouriteItem , getMyFavouriteItems} = require('../controllers/Reg.controller');
 const {authenticate} = require('../middlewares/auth.middleware')
 const {authorize} = require('../middlewares/role.middleware')
 
@@ -13,6 +13,12 @@ router.get('/' , authenticate , authorize('admin') ,getUser);       // Only Admi
 router.get('/:id' , authenticate , authorize('user') ,  getUserById);            // For each Profile 
 
 router.delete("/:id" , deleteUserById);             // Only for test in Postman
+
+
+// Favourite Section
+router.post( '/favourites/items/:itemId', authenticate, toggleFavouriteItem );
+
+router.get('/favourites/items' , authenticate , getMyFavouriteItems );
 
 
 module.exports = router;
