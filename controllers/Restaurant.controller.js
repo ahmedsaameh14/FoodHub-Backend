@@ -6,7 +6,7 @@ const mongoose = require("mongoose");
 exports.createRestaurant = async (req, res) => {
     try {
         const { name, desc, phone, address, category } = req.body;
-        const img = req.file.filename;
+        const img = req.file.path;
 
         let categoryId = category;
         if (!mongoose.Types.ObjectId.isValid(category)) {
@@ -82,7 +82,7 @@ exports.updateRestaurant = async (req , res) =>{
     // Handle image update if file was uploaded
     let img = restaurant.img;
     if (req.file) {
-      img = req.file.filename;
+      img = req.file.path;
     }
 
     // Handle Category (string name or ID)

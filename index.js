@@ -10,7 +10,7 @@ const corsMiddleware = require('./middlewares/cors.middleware');
 app.use(corsMiddleware);
 
 app.use(express.json());
-app.use('/uploads' , express.static(path.join(__dirname , './uploads')))
+// app.use('/uploads' , express.static(path.join(__dirname , './uploads')))
 
 
 connectDB();
