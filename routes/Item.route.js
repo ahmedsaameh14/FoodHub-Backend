@@ -7,7 +7,7 @@ const {authorize} = require('../middlewares/role.middleware')
 
 
 // Create item 
-router.post('/', authenticate , authorize('admin'), upload.single('img') , addItemToRestaurant);
+router.post('/', authenticate , authorize('admin') , addItemToRestaurant);
 
 // Get items by restaurant
 router.get('/restaurant/:restaurantId', getItemsByRestaurant);
@@ -16,7 +16,7 @@ router.get('/restaurant/:restaurantId', getItemsByRestaurant);
 router.get('/:id', getItemById);
 
 // Update item
-router.put('/:id', upload.single('img') , authenticate , authorize('admin') , updateItem);
+router.put('/:id' , authenticate , authorize('admin') , updateItem);
 
 // Delete item
 router.delete('/:id', authenticate , authorize('admin') , deleteItem);

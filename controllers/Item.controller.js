@@ -6,7 +6,7 @@ const Restaurant = require('../models/Restaurant.model');
 exports.addItemToRestaurant = async (req, res) => {
   try {
     const { name, desc, price , restaurantId } = req.body;
-    const img = req.file.filename;
+    const img = req.file.path;
 
     const restaurant = await Restaurant.findById(restaurantId);
     if (!restaurant) {
@@ -91,7 +91,7 @@ exports.updateItem = async (req, res) => {
 
     let img = item.img;
     if (req.file) {
-      img = req.file.filename;
+      img = req.file.path;
     }
 
     const updatedItem = await Item.findByIdAndUpdate(
