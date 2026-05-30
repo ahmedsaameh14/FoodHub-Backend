@@ -1,47 +1,43 @@
-const category = require('../models/Category.model')
+const category = require('../models/Category.model');
+const catchAsync = require('../utils/catch-async.util');
+const AppError = require('../utils/app-error.util');
 
-exports.createCategory = async (req , res) =>{
-    try{
-        const {name} = req.body;
+exports.createCategory = catchAsync(async (req, res, next) => {
+    const { name } = req.body;
 
-        const cat = await category.create({name});
-        res.status(201).json({ message: 'Category Created' , data: cat});
+    if (!name || name.trim() === '') {
+        return next(new AppError('Category name is required', 400));
     }
-    catch (err) {
-        res.status(500).json({ message: 'Faild to Create Category' , error: err.message})
+
+    const cat = await category.create({ name });
+    res.status(201).json({ 
+        status: 'success',
+        message: 'Category Created', 
+        data: cat 
+    });
+});
+
+exports.getCategory = catchAsync(async (req, res, next) => {
+    const cat = await category.find();
+    res.status(200).json({ 
+        status: 'success',
+        message: 'List of Categories', 
+        data: cat 
+    });
+});
+
+exports.deleteCategory = catchAsync(async (req, res, next) => {
+    const { id } = req.params;
+
+    const cat = await category.findByIdAndDelete(id);
+
+    if (!cat) {
+        return next(new AppError('Category Not Found', 404));
     }
-};
 
-exports.getCategory = async (req , res) => {
-    try{
-        const cat = await category.find();
-        res.status(200).json({ message: 'List of Categories' , data: cat});
-    }
-    catch (err) {
-        res.status(500).json({ message: 'Faild to Get Category' , error: err.message})
-    }
-}
-
-exports.deleteCategory = async (req, res) => {
-    try {
-        const { id } = req.params;
-
-        const cat = await category.findByIdAndDelete(id);
-
-        if (!cat) {
-            return res.status(404).json({
-                message: 'Category Not Found'
-            });
-        }
-
-        res.status(200).json({
-            message: 'Category Deleted Successfully',
-            data: cat
-        });
-    } catch (err) {
-        res.status(500).json({
-            message: 'Faild to Delete Category',
-            error: err.message
-        });
-    }
-};
+    res.status(200).json({
+        status: 'success',
+        message: 'Category Deleted Successfully',
+        data: cat
+    });
+});

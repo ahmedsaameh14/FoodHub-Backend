@@ -2,59 +2,69 @@ const Reg = require('../models/Reg.model');
 const catchAsync = require('../utils/catch-async.util');
 const AppError = require('../utils/app-error.util');
 
-exports.createUser = (role)=>{
-    return catchAsync( async(req,res,next)=>{
-        const {name,email,password}= req.body;
+exports.createUser = (role) => {
+    return catchAsync(async (req, res, next) => {
+        const { name, email, password } = req.body;
 
-        if(!['admin','user'].includes(role)){
-            return next(new AppError('Invalid Role',400))
+        // Validation
+        if (!name || !email || !password) {
+            return next(new AppError('Please provide name, email, and password', 400));
         }
-        const existing = await Reg.findOne({email});
-        if(existing){
-            return next(new AppError('Email Already Exist'))
+
+        if (!['admin', 'user'].includes(role)) {
+            return next(new AppError('Invalid Role', 400));
         }
-        const user = await Reg.create({name , email , password , role});
-        res.status(201).json({message: 'User Created' , user})
-    })
-    }
-    
-exports.getUser = async (req,res) =>{
+
+        const existing = await Reg.findOne({ email });
+        if (existing) {
+            return next(new AppError('Email Already Exist', 400));
+        }
+
+        const user = await Reg.create({ name, email, password, role });
+        res.status(201).json({
+            status: 'success',
+            message: 'User Created',
+            user
+        });
+    });
+};
+
+exports.getUser = catchAsync(async (req, res, next) => {
     const user = await Reg.find();
-    res.status(201).json({message: 'List of Users' , data: user})
-}
+    res.status(200).json({
+        status: 'success',
+        message: 'List of Users',
+        data: user
+    });
+});
 
-exports.getUserById = async (req, res) => {
-    try {
-      const id = req.params.id;     // Edited
-      const user = await Reg.findById(id);
-  
-      if (!user) {
-        return res.status(404).json({ error: "User not found." });
-      }
-  
-      return res.status(200).json({
-        message: "User retrieved successfully.",
-        data: user,
-      });
-    } catch (error) {
-      console.error(error);
-      return res.status(500).json({
-        error: "Server error while getting user.",
-      });
+exports.getUserById = catchAsync(async (req, res, next) => {
+    const id = req.params.id;
+    const user = await Reg.findById(id);
+
+    if (!user) {
+        return next(new AppError('User not found', 404));
     }
-  };
 
-  exports.deleteUserById = catchAsync(async (req, res, next) => {
+    return res.status(200).json({
+        status: 'success',
+        message: 'User retrieved successfully',
+        data: user
+    });
+});
+
+exports.deleteUserById = catchAsync(async (req, res, next) => {
     const id = req.params.id;
 
     const user = await Reg.findByIdAndDelete(id);
 
     if (!user) {
-        return next(new AppError("User not found", 404));
+        return next(new AppError('User not found', 404));
     }
 
     res.status(200).json({
-        message: "User deleted successfully.",
+        status: 'success',
+        message: 'User deleted successfully',
         deletedUser: user
     });
 });
@@ -62,39 +72,45 @@ exports.getUserById = async (req, res) => {
 // Favourite Section 
 
 exports.toggleFavouriteItem = catchAsync(async (req, res, next) => {
-  const userId = req.user.id; // from authenticate middleware
-  const itemId = req.params.itemId; // item id
+    const userId = req.user.id; // from authenticate middleware
+    const itemId = req.params.itemId; // item id
 
-  const user = await Reg.findById(userId);
+    const user = await Reg.findById(userId);
 
-  if (!user) {
-    return next(new AppError("User not found", 404));
-  }
+    if (!user) {
+        return next(new AppError('User not found', 404));
+    }
 
-  const isExist = user.favourites.includes(itemId);
+    const isExist = user.favourites.includes(itemId);
 
-  if (isExist) {
-    user.favourites.pull(itemId); // remove
-  } else {
-    user.favourites.push(itemId); // add
-  }
+    if (isExist) {
+        user.favourites.pull(itemId); // remove
+    } else {
+        user.favourites.push(itemId); // add
+    }
 
-  await user.save();
+    await user.save();
 
-  res.status(200).json({
-    message: isExist
-      ? "Item removed from favourites"
-      : "Item added to favourites",
-    favourites: user.favourites,
-  });
+    res.status(200).json({
+        status: 'success',
+        message: isExist
+            ? 'Item removed from favourites'
+            : 'Item added to favourites',
+        favourites: user.favourites
+    });
 });
 
 exports.getMyFavouriteItems = catchAsync(async (req, res, next) => {
-  const userId = req.user.id;
+    const userId = req.user.id;
 
-  const user = await Reg.findById(userId).populate("favourites"); // 👈 now it returns full item data
+    const user = await Reg.findById(userId).populate('favourites');
 
-  res.status(200).json({
-    favourites: user.favourites,
-  });
+    if (!user) {
+        return next(new AppError('User not found', 404));
+    }
+
+    res.status(200).json({
+        status: 'success',
+        favourites: user.favourites
+    });
 });

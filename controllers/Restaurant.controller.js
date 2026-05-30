@@ -1,80 +1,108 @@
 const Restaurant = require("../models/Restaurant.model");
 const Category = require("../models/Category.model");
 const mongoose = require("mongoose");
+const catchAsync = require('../utils/catch-async.util');
+const AppError = require('../utils/app-error.util');
 
 // If Using name of Category not ID
-exports.createRestaurant = async (req, res) => {
-    try {
-        const { name, desc, phone, address, category } = req.body;
-        const img = req.file.path;
+exports.createRestaurant = catchAsync(async (req, res, next) => {
+    const { name, desc, phone, address, category } = req.body;
 
-        let categoryId = category;
-        if (!mongoose.Types.ObjectId.isValid(category)) {
-            const catDoc = await Category.findOne({ name: category });
-            if (!catDoc) {
-                return res.status(400).json({ message: "Invalid category name" });
-            }
-            categoryId = catDoc._id;
-        }
-
-        const myRestaurant = await Restaurant.create({
-            name,
-            desc,
-            phone,
-            address,
-            img,
-            category: categoryId,
-        });
-
-        res.status(201).json({ message: "Restaurant Created", myRestaurant });
-    } catch (err) {
-        res.status(500).json({
-            message: "Failed to create Restaurant",
-            error: err.message,
-        });
+    // Validation
+    if (!name || !desc || !phone || !address || !category) {
+        return next(new AppError('Please provide all required fields', 400));
     }
-};
+
+    if (!req.file) {
+        return next(new AppError('Please upload an image', 400));
+    }
+
+    let categoryId = category;
+    if (!mongoose.Types.ObjectId.isValid(category)) {
+        const catDoc = await Category.findOne({ name: category });
+        if (!catDoc) {
+            return next(new AppError('Invalid category name', 400));
+        }
+        categoryId = catDoc._id;
+    }
+
+    const myRestaurant = await Restaurant.create({
+        name,
+        desc,
+        phone,
+        address,
+        img: req.file.path,
+        category: categoryId,
+    });
+
+    res.status(201).json({
+        status: 'success',
+        message: 'Restaurant Created',
+        data: myRestaurant
+    });
+});
 
 // Get All Res with Pagination
-exports.getRestaurant = async (req, res) => {
-    const restaurant = await Restaurant.find();
-    //  res.status(201).json({ message : 'List of Restaurant', data: Restaurant});
-    res.status(200).json(res.paginatedResult);
-};
+exports.getRestaurant = catchAsync(async (req, res, next) => {
+    res.status(200).json({
+        status: 'success',
+        ...res.paginatedResult
+    });
+});
 
 // Get Res by ID
-exports.getRestaurantById = async (req, res) => {
+exports.getRestaurantById = catchAsync(async (req, res, next) => {
     const id = req.params.id;
-    const restaurant = await Restaurant.findById(id);
-    if (restaurant) {
-        res.status(200).json({ message: "Restaurant Data", data: restaurant });
-    } else {
-        res.status(404).json({ message: "Restaurant Not Found" });
-    }
-};
 
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+        return next(new AppError('Invalid Restaurant ID', 400));
+    }
+
+    const restaurant = await Restaurant.findById(id);
+
+    if (!restaurant) {
+        return next(new AppError('Restaurant Not Found', 404));
+    }
+
+    res.status(200).json({
+        status: 'success',
+        message: 'Restaurant Data',
+        data: restaurant
+    });
+});
 
 // Get Related Restaurants
-exports.getRelatedRestaurant = async (req , res) =>{
+exports.getRelatedRestaurant = catchAsync(async (req, res, next) => {
     const id = req.params.id;
-    const restaurant = await Restaurant.where('_id').ne(id).limit(6)
-    if(restaurant){
-        res.status(200).json({message: 'Restaurant Rlated Data' , data: restaurant});
-    }else {
-        res.status(404).json({message:'Restaurant Not Found'})
-    }
-}
 
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+        return next(new AppError('Invalid Restaurant ID', 400));
+    }
+
+    const restaurant = await Restaurant.where('_id').ne(id).limit(6);
+
+    if (!restaurant || restaurant.length === 0) {
+        return next(new AppError('No Related Restaurants Found', 404));
+    }
+
+    res.status(200).json({
+        status: 'success',
+        message: 'Related Restaurants Data',
+        data: restaurant
+    });
+});
 
 // Update Restaurant
-exports.updateRestaurant = async (req , res) =>{
-    try {
+exports.updateRestaurant = catchAsync(async (req, res, next) => {
     const { id } = req.params;
 
-    // Check if restaurant exists
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+        return next(new AppError('Invalid Restaurant ID', 400));
+    }
+
     const restaurant = await Restaurant.findById(id);
     if (!restaurant) {
-      return res.status(404).json({ message: 'Restaurant Not Found' });
+        return next(new AppError('Restaurant Not Found', 404));
     }
 
     const { name, desc, phone, address, category } = req.body;
@@ -82,64 +110,56 @@ exports.updateRestaurant = async (req , res) =>{
     // Handle image update if file was uploaded
     let img = restaurant.img;
     if (req.file) {
-      img = req.file.path;
+        img = req.file.path;
     }
 
     // Handle Category (string name or ID)
     let categoryId = category || restaurant.category;
     if (category && !mongoose.Types.ObjectId.isValid(category)) {
-      const catDoc = await Category.findOne({ name: category });
-      if (!catDoc) {
-        return res.status(400).json({ message: 'Invalid category name' });
-      }
-      categoryId = catDoc._id;
+        const catDoc = await Category.findOne({ name: category });
+        if (!catDoc) {
+            return next(new AppError('Invalid category name', 400));
+        }
+        categoryId = catDoc._id;
     }
 
     // Update Restaurant
     const updatedRestaurant = await Restaurant.findByIdAndUpdate(
-      id,
-      {
-        name: name || restaurant.name,
-        desc: desc || restaurant.desc,
-        phone: phone || restaurant.phone,
-        address: address || restaurant.address,
-        img,
-        category: categoryId
-      },
-      { new: true }
+        id,
+        {
+            name: name || restaurant.name,
+            desc: desc || restaurant.desc,
+            phone: phone || restaurant.phone,
+            address: address || restaurant.address,
+            img,
+            category: categoryId
+        },
+        { new: true, runValidators: true }
     );
 
-    res.status(200).json({ message: 'Restaurant Updated', updatedRestaurant });
-
-  } catch (err) {
-    res.status(500).json({
-      message: 'Failed to update Restaurant',
-      error: err.message
+    res.status(200).json({
+        status: 'success',
+        message: 'Restaurant Updated',
+        data: updatedRestaurant
     });
-  }
-};
+});
 
-exports.deleteRestaurant = async (req, res) => {
-    try {
-        const { id } = req.params;
+exports.deleteRestaurant = catchAsync(async (req, res, next) => {
+    const { id } = req.params;
 
-        const restaurant = await Restaurant.findByIdAndDelete(id);
-
-        if (!restaurant) {
-            return res.status(404).json({
-                message: "Restaurant Not Found"
-            });
-        }
-
-        res.status(200).json({
-            message: "Restaurant Deleted Successfully",
-            data: restaurant
-        });
-
-    } catch (err) {
-        res.status(500).json({
-            message: "Failed to delete Restaurant",
-            error: err.message
-        });
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+        return next(new AppError('Invalid Restaurant ID', 400));
     }
-};
+
+    const restaurant = await Restaurant.findByIdAndDelete(id);
+
+    if (!restaurant) {
+        return next(new AppError('Restaurant Not Found', 404));
+    }
+
+    res.status(200).json({
+        status: 'success',
+        message: 'Restaurant Deleted Successfully',
+        data: restaurant
+    });
+});
